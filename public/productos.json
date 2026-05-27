@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "nombre": "Notebook Pro 14\"",
+    "categoria": "Computación",
+    "precio": 1299990,
+    "stock": 12,
+    "descripcion": "Notebook ultraliviana con pantalla de 14 pulgadas, 16 GB de RAM y 512 GB SSD. Ideal para trabajo y diseño.",
+    "icono": "notebook",
+    "imagen": "/img/notebook.jpg"
+  },
+  {
+    "id": 2,
+    "nombre": "Auriculares Inalámbricos",
+    "categoria": "Audio",
+    "precio": 149990,
+    "stock": 35,
+    "descripcion": "Auriculares con cancelación activa de ruido, hasta 30 horas de batería y conexión Bluetooth 5.3.",
+    "icono": "auriculares",
+    "imagen": "/img/auriculares.jpg"
+  },
+  {
+    "id": 3,
+    "nombre": "Smartphone X12",
+    "categoria": "Telefonía",
+    "precio": 899990,
+    "stock": 20,
+    "descripcion": "Smartphone con cámara triple de 50 MP, pantalla OLED de 6.5\" y carga rápida de 65W.",
+    "icono": "smartphone",
+    "imagen": "/img/smartphone.jpg"
+  },
+  {
+    "id": 4,
+    "nombre": "Teclado Mecánico RGB",
+    "categoria": "Accesorios",
+    "precio": 79990,
+    "stock": 48,
+    "descripcion": "Teclado mecánico con switches rojos, iluminación RGB personalizable y estructura de aluminio.",
+    "icono": "teclado",
+    "imagen": "/img/teclado.jpg"
+  },
+  {
+    "id": 5,
+    "nombre": "Monitor 27\" 4K",
+    "categoria": "Computación",
+    "precio": 459990,
+    "stock": 15,
+    "descripcion": "Monitor de 27 pulgadas con resolución 4K UHD, panel IPS y 99% sRGB para una imagen precisa.",
+    "icono": "monitor",
+    "imagen": "/img/monitor.jpg"
+  },
+  {
+    "id": 6,
+    "nombre": "Mouse Ergonómico",
+    "categoria": "Accesorios",
+    "precio": 39990,
+    "stock": 60,
+    "descripcion": "Mouse ergonómico inalámbrico con sensor de 16000 DPI y diseño que reduce la fatiga.",
+    "icono": "mouse",
+    "imagen": "/img/mouse.jpg"
+  },
+  {
+    "id": 7,
+    "nombre": "Tablet Air 11\"",
+    "categoria": "Computación",
+    "precio": 549990,
+    "stock": 18,
+    "descripcion": "Tablet de 11 pulgadas con pantalla líquida, lápiz óptico compatible y 128 GB de almacenamiento.",
+    "icono": "tablet",
+    "imagen": "/img/tablet.jpg"
+  },
+  {
+    "id": 8,
+    "nombre": "Parlante Bluetooth",
+    "categoria": "Audio",
+    "precio": 99990,
+    "stock": 40,
+    "descripcion": "Parlante portátil resistente al agua IPX7, sonido 360° y 24 horas de reproducción.",
+    "icono": "parlante",
+    "imagen": "/img/parlante.jpg"
+  }
+]
