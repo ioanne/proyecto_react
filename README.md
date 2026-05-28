@@ -1,5 +1,7 @@
 # TecnoVirtual — Catálogo React
 
+🚀 **Ver app en vivo:** https://proyecto-react-omega-six.vercel.app
+
 Aplicación de e-commerce (catálogo + carrito de compras) construida con **React + Vite** y **react-router-dom**, usando la **Context API** para el estado global del carrito.
 
 ---
