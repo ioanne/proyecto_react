@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { Spinner, Alert } from 'react-bootstrap'
 import { useCart } from '../context/CartContext.jsx'
 import { formatPrecio } from './Item.jsx'
 import ProductImage from './ProductImage.jsx'
+import Seo from './Seo.jsx'
+import { getProductoById } from '../services/productsService.js'
 
 function ItemDetailContainer() {
   const { id } = useParams()
@@ -15,26 +18,41 @@ function ItemDetailContainer() {
   const [cantidad, setCantidad] = useState(1)
 
   useEffect(() => {
+    let activo = true
     setLoading(true)
-    fetch('/productos.json')
-      .then((res) => {
-        if (!res.ok) throw new Error('No se pudieron cargar los productos')
-        return res.json()
+    setError(null)
+    setCantidad(1)
+    getProductoById(id)
+      .then((encontrado) => {
+        if (!activo) return
+        if (!encontrado) setError('Producto no encontrado.')
+        else setProducto(encontrado)
       })
-      .then((data) => {
-        const encontrado = data.find((p) => p.id === Number(id))
-        if (!encontrado) throw new Error('Producto no encontrado')
-        setProducto(encontrado)
+      .catch((err) => {
+        console.error(err)
+        if (activo) setError('No se pudo cargar el producto.')
       })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (activo) setLoading(false)
+      })
+    return () => {
+      activo = false
+    }
   }, [id])
 
-  if (loading) return <p className="status-msg">Cargando producto…</p>
+  if (loading) {
+    return (
+      <div className="container page-loader" role="status">
+        <Spinner animation="border" />
+        <span>Cargando producto…</span>
+      </div>
+    )
+  }
+
   if (error) {
     return (
-      <div className="container status-msg status-error">
-        <p>{error}</p>
+      <div className="container detail-error">
+        <Alert variant="danger">{error}</Alert>
         <Link to="/productos" className="btn btn-primary">
           Volver al catálogo
         </Link>
@@ -42,14 +60,15 @@ function ItemDetailContainer() {
     )
   }
 
-  const handleAddToCart = () => {
-    addToCart(producto, cantidad)
-  }
+  const sinStock = Number(producto.stock) <= 0
+  const handleAddToCart = () => addToCart(producto, cantidad)
 
   return (
     <section className="container detail">
+      <Seo title={producto.nombre} description={producto.descripcion} />
+
       <button onClick={() => navigate(-1)} className="btn btn-ghost">
-        Volver
+        ← Volver
       </button>
 
       <div className="detail-grid">
@@ -70,14 +89,27 @@ function ItemDetailContainer() {
                 min="1"
                 max={producto.stock}
                 value={cantidad}
+                disabled={sinStock}
                 onChange={(e) =>
-                  setCantidad(Math.max(1, Number(e.target.value) || 1))
+                  setCantidad(
+                    Math.max(
+                      1,
+                      Math.min(
+                        Number(producto.stock) || 99,
+                        Number(e.target.value) || 1,
+                      ),
+                    ),
+                  )
                 }
               />
             </label>
 
-            <button className="btn btn-primary" onClick={handleAddToCart}>
-              Agregar al carrito
+            <button
+              className="btn btn-primary"
+              onClick={handleAddToCart}
+              disabled={sinStock}
+            >
+              {sinStock ? 'Sin stock' : 'Agregar al carrito'}
             </button>
 
             {isInCart(producto.id) && (

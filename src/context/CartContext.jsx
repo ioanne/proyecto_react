@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, useMemo, useEffect } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+} from 'react'
 
 const CartContext = createContext()
 
@@ -12,7 +19,6 @@ export const useCart = () => {
   return context
 }
 
-// Lee el carrito guardado en localStorage (si existe y es válido).
 const leerCarritoGuardado = () => {
   if (typeof window === 'undefined') return []
   try {
@@ -25,20 +31,23 @@ const leerCarritoGuardado = () => {
 }
 
 export function CartProvider({ children }) {
-  // Inicialización perezosa: el carrito arranca con lo que haya en localStorage.
   const [cart, setCart] = useState(leerCarritoGuardado)
+  const [toast, setToast] = useState({ show: false, message: '' })
 
-  // Cada vez que cambia el carrito, lo persistimos en localStorage.
   useEffect(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cart))
     } catch {
-      // Si localStorage no está disponible (modo privado, cuota llena, etc.)
-      // la app sigue funcionando solo en memoria.
+      // localStorage puede fallar (modo privado, cuota); seguimos en memoria.
     }
   }, [cart])
 
-  const addToCart = (producto, cantidad = 1) => {
+  const hideToast = useCallback(
+    () => setToast((prev) => ({ ...prev, show: false })),
+    [],
+  )
+
+  const addToCart = useCallback((producto, cantidad = 1) => {
     setCart((prev) => {
       const existente = prev.find((item) => item.id === producto.id)
       if (existente) {
@@ -50,15 +59,37 @@ export function CartProvider({ children }) {
       }
       return [...prev, { ...producto, cantidad }]
     })
-  }
+    setToast({ show: true, message: `${producto.nombre} agregado al carrito` })
+  }, [])
 
-  const removeFromCart = (id) => {
+  const removeFromCart = useCallback((id) => {
     setCart((prev) => prev.filter((item) => item.id !== id))
-  }
+  }, [])
 
-  const clearCart = () => setCart([])
+  const increaseQuantity = useCallback((id) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, cantidad: item.cantidad + 1 } : item,
+      ),
+    )
+  }, [])
 
-  const isInCart = (id) => cart.some((item) => item.id === id)
+  const decreaseQuantity = useCallback((id) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, cantidad: Math.max(1, item.cantidad - 1) }
+          : item,
+      ),
+    )
+  }, [])
+
+  const clearCart = useCallback(() => setCart([]), [])
+
+  const isInCart = useCallback(
+    (id) => cart.some((item) => item.id === id),
+    [cart],
+  )
 
   const totalQuantity = useMemo(
     () => cart.reduce((acc, item) => acc + item.cantidad, 0),
@@ -74,10 +105,14 @@ export function CartProvider({ children }) {
     cart,
     addToCart,
     removeFromCart,
+    increaseQuantity,
+    decreaseQuantity,
     clearCart,
     isInCart,
     totalQuantity,
     totalPrice,
+    toast,
+    hideToast,
   }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

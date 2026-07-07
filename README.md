@@ -1,228 +1,266 @@
-# TecnoVirtual — Catálogo React
+# TecnoVirtual
 
-🚀 **Ver app en vivo:** https://proyecto-react-omega-six.vercel.app
+Aplicación de eCommerce hecha con React y Vite. Incluye catálogo de productos,
+carrito de compras con Context API, autenticación de usuarios y un panel de
+administración con CRUD de productos sobre Firebase (Authentication + Firestore).
+Además tiene búsqueda, paginación, rutas protegidas por rol, SEO por página y un
+diseño responsive.
 
-Aplicación de e-commerce (catálogo + carrito de compras) construida con **React + Vite** y **react-router-dom**, usando la **Context API** para el estado global del carrito.
+Aplicación en vivo: https://proyecto-react-omega-six.vercel.app
 
----
+## Contenido
 
-## Índice
-
+- [Tecnologías](#tecnologías)
+- [Funcionalidades](#funcionalidades)
 - [Requisitos](#requisitos)
-- [Configuración del entorno (nvm + Node)](#configuración-del-entorno-nvm--node)
-- [Puesta en marcha](#puesta-en-marcha)
+- [Instalación](#instalación)
+- [Configuración de Firebase](#configuración-de-firebase)
+- [Reglas de seguridad de Firestore](#reglas-de-seguridad-de-firestore)
+- [Roles y permisos de administrador](#roles-y-permisos-de-administrador)
+- [Carga inicial de productos](#carga-inicial-de-productos)
+- [Ejecutar el proyecto](#ejecutar-el-proyecto)
 - [Scripts disponibles](#scripts-disponibles)
-- [Stack / tecnologías](#stack--tecnologías)
 - [Estructura del proyecto](#estructura-del-proyecto)
-- [Rutas de la aplicación](#rutas-de-la-aplicación)
-- [Cómo se cumplen los requerimientos](#cómo-se-cumplen-los-requerimientos)
-- [Detalle de la implementación](#detalle-de-la-implementación)
-  - [Persistencia de la sesión (localStorage)](#persistencia-de-la-sesión-localstorage)
-- [Datos de productos](#datos-de-productos)
+- [Rutas](#rutas)
+- [Usuario de prueba](#usuario-de-prueba)
+- [Deploy](#deploy)
 
----
+## Tecnologías
+
+- React 19 y Vite 7.
+- react-router-dom 7 para el ruteo, con rutas protegidas.
+- Context API para el estado global del carrito y de la autenticación.
+- Firebase: Authentication (registro, login y logout) y Firestore (CRUD de productos).
+- React-Bootstrap y Bootstrap 5.3 para formularios, modales, tablas, spinners,
+  alertas, paginación y toasts. El tema oscuro se activa con `data-bs-theme`.
+- styled-components para componentes con estilo propio (por ejemplo la barra de búsqueda).
+- react-icons para los íconos de la interfaz.
+- react-helmet-async para el título y la descripción de cada página.
+- CSS propio con variables para el tema oscuro, que convive con Bootstrap.
+
+## Funcionalidades
+
+- Carrito con Context API: agregar, quitar, vaciar, sumar y restar cantidades,
+  subtotales y total. Se guarda en `localStorage` y muestra un aviso al agregar un producto.
+- Autenticación con Firebase: registro, login, logout, sesión persistente y
+  mensajes de error claros.
+- Rutas protegidas: `/perfil` requiere estar logueado y `/admin` requiere ser
+  administrador. Si no hay sesión, se redirige al login.
+- CRUD de productos sobre Firestore, con formulario validado y confirmación antes de borrar.
+- Estados de carga y error con spinners, alertas y mensajes de lista vacía.
+- Búsqueda en tiempo real por nombre, categoría o descripción.
+- Paginación de a 8 productos, que vuelve a la primera página al buscar.
+- Título y descripción propios por página, más mejoras de accesibilidad.
+- Diseño adaptado a celular, tablet y escritorio.
 
 ## Requisitos
 
-- [nvm](https://github.com/nvm-sh/nvm) (Node Version Manager)
-- Node.js **24.13.1** (fijado en [`.nvmrc`](.nvmrc))
-- npm (incluido con Node)
+- Node.js 24.13.1 (fijado en `.nvmrc`). El mínimo soportado es 20.19.0.
+- Una cuenta de Firebase con un proyecto que tenga Authentication y Firestore habilitados.
 
----
-
-## Configuración del entorno (nvm + Node)
-
-El proyecto fija la versión de Node mediante el archivo [`.nvmrc`](.nvmrc), que contiene:
-
-```
-24.13.1
-```
-
-Para usar exactamente esa versión:
+## Instalación
 
 ```bash
-# Si todavía no tenés Node 24.13.1 instalado:
-nvm install
-
-# Activar la versión del proyecto (lee el .nvmrc):
-nvm use
+nvm use        # usa la versión de Node del .nvmrc
+npm install
 ```
 
-> Con `nvm use` dentro de la carpeta del proyecto, nvm toma automáticamente la versión declarada en `.nvmrc`. También podés configurar tu shell para que lo haga solo al entrar a la carpeta.
+## Configuración de Firebase
 
-El `package.json` además declara el requisito mínimo de motor:
+Las credenciales no van escritas en el código: se leen de variables de entorno.
 
-```json
-"engines": { "node": ">=20.19.0" }
-```
-
----
-
-## Puesta en marcha
+1. Crear un proyecto en la consola de Firebase.
+2. Activar Authentication con el método Email/Password.
+3. Crear una base de Firestore.
+4. En la configuración del proyecto, copiar los datos del SDK web.
+5. Copiar el archivo de ejemplo y completarlo:
 
 ```bash
-nvm install   # instala Node 24.13.1 (solo la primera vez)
-nvm use       # activa Node 24.13.1
-npm install   # instala las dependencias
-npm run dev   # levanta el servidor de desarrollo
+cp .env.example .env
 ```
 
-El servidor de desarrollo queda disponible en:
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
+
+El archivo `.env` está ignorado en git y no se sube al repositorio.
+
+## Reglas de seguridad de Firestore
+
+Estas reglas dejan la lectura del catálogo abierta, permiten escribir productos
+solo a los administradores y evitan que un usuario se dé permisos a sí mismo.
 
 ```
-http://localhost:5173
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /usuarios/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.isStaff == false;
+      allow update, delete: if false;
+    }
+
+    match /productos/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.isStaff == true;
+    }
+  }
+}
 ```
 
----
+## Roles y permisos de administrador
+
+Estar registrado no alcanza para administrar productos. La ruta `/admin` y la
+escritura en Firestore quedan reservadas a los usuarios marcados como staff.
+
+El rol se guarda en Firestore, en el documento `usuarios/{uid}`, con un campo
+`isStaff`. El front lo único que hace con ese campo es leerlo para mostrar u
+ocultar el panel. Quien decide si una escritura se permite son las reglas de
+seguridad, no el navegador.
+
+Cuando alguien se registra, la app crea su documento de perfil con `isStaff` en
+`false`. Que ese valor viaje desde el cliente no es un problema, porque las
+reglas no confían en lo que manda el front: lo validan. La regla de creación
+solo acepta el documento si `isStaff` es `false`, y la actualización del perfil
+está prohibida para todos. Como consecuencia, desde el navegador es imposible:
+
+- crear el perfil con `isStaff` en `true` (la creación exige `false`);
+- modificarlo después (la actualización está denegada);
+- tocar el documento de otro usuario (solo se permite el propio `uid`).
+
+El único que puede pasar `isStaff` a `true` es el dueño del proyecto, desde la
+consola de Firebase. Ese valor nunca sale del navegador. Para escribir en la
+colección `productos`, las reglas verifican que el usuario tenga `isStaff` en
+`true`, así que un usuario común navega la tienda pero no puede crear, editar ni
+borrar productos.
+
+Para designar un administrador:
+
+1. Registrarse o iniciar sesión con el email que será administrador. Al entrar,
+   la app crea su documento `usuarios/{uid}` con `isStaff` en `false`.
+2. En la consola de Firebase, dentro de la colección `usuarios`, abrir ese
+   documento (el id es el UID del usuario, visible también en Authentication).
+3. Cambiar el campo `isStaff` a `true`.
+4. En la app, cerrar sesión y volver a entrar. Ahora aparece el acceso al panel
+   y se pueden administrar los productos.
+
+## Carga inicial de productos
+
+Los productos viven en Firestore. Para no cargarlos a mano la primera vez, el
+panel de administración tiene un botón "Cargar catálogo inicial" que, si la
+colección está vacía, la completa con los productos de `public/productos.json`.
+Ese botón solo está disponible para un usuario administrador.
+
+También hay un script equivalente para correr desde la terminal, que necesita un
+usuario administrador ya creado porque las reglas exigen ese permiso:
+
+```bash
+SEED_EMAIL=tu@email.com SEED_PASSWORD=tuclave npm run seed
+```
+
+## Ejecutar el proyecto
+
+```bash
+npm run dev
+```
+
+Queda disponible en http://localhost:5173.
+
+Para generar y probar la versión de producción:
+
+```bash
+npm run build
+npm run preview
+```
 
 ## Scripts disponibles
 
 | Script            | Descripción                                            |
 |-------------------|--------------------------------------------------------|
-| `npm run dev`     | Servidor de desarrollo con hot reload (Vite).          |
-| `npm run build`   | Build de producción optimizado en la carpeta `dist/`.  |
-| `npm run preview` | Sirve localmente el build de producción para probarlo. |
-
----
-
-## Stack / tecnologías
-
-- **React 19** — librería de UI.
-- **Vite 7** — bundler y servidor de desarrollo.
-- **react-router-dom 7** — ruteo del lado del cliente (SPA).
-- **Context API** — estado global del carrito (sin librerías externas de estado).
-- **CSS** plano con variables CSS (tema oscuro, diseño responsive).
-
----
+| `npm run dev`     | Servidor de desarrollo con recarga en caliente.        |
+| `npm run build`   | Build de producción en la carpeta `dist/`.             |
+| `npm run preview` | Sirve localmente el build de producción.               |
+| `npm run seed`    | Carga los productos iniciales en Firestore.            |
 
 ## Estructura del proyecto
 
 ```
 proyecto_react/
-├── .nvmrc
+├── .env.example
 ├── index.html
-├── package.json
 ├── vite.config.js
+├── vercel.json
+├── scripts/
+│   └── seed.mjs
 ├── public/
 │   ├── productos.json
-│   └── vite.svg
+│   └── img/
 └── src/
     ├── main.jsx
     ├── App.jsx
     ├── index.css
+    ├── firebase/
+    │   └── config.js
     ├── context/
-    │   └── CartContext.jsx
+    │   ├── CartContext.jsx
+    │   └── AuthContext.jsx
+    ├── services/
+    │   ├── productsService.js
+    │   └── usersService.js
     ├── components/
-    │   ├── Layout.jsx
-    │   ├── Header.jsx
-    │   ├── NavBar.jsx
-    │   ├── Footer.jsx
-    │   ├── CartWidget.jsx
-    │   ├── ProductImage.jsx
-    │   ├── ProductIcon.jsx
-    │   ├── Item.jsx
-    │   ├── ItemListContainer.jsx
-    │   └── ItemDetailContainer.jsx
+    │   ├── Layout.jsx  Header.jsx  NavBar.jsx  Footer.jsx
+    │   ├── CartWidget.jsx  ProductImage.jsx  ProductIcon.jsx
+    │   ├── Item.jsx  ItemListContainer.jsx  ItemDetailContainer.jsx
+    │   ├── ProtectedRoute.jsx  Seo.jsx
+    │   ├── SearchBar.jsx  Pagination.jsx
+    │   └── ProductForm.jsx  ConfirmModal.jsx
     └── pages/
-        ├── Home.jsx
-        ├── Productos.jsx
-        ├── ProductoDetalle.jsx
-        ├── Carrito.jsx
-        ├── Contacto.jsx
-        └── NotFound.jsx
+        ├── Home.jsx  Productos.jsx  ProductoDetalle.jsx  Carrito.jsx
+        ├── Contacto.jsx  Login.jsx  Register.jsx  Perfil.jsx
+        └── AdminProducts.jsx  NotFound.jsx
 ```
 
----
+## Rutas
 
-## Rutas de la aplicación
+| Ruta            | Acceso        | Descripción                          |
+|-----------------|---------------|--------------------------------------|
+| `/`             | Público       | Inicio.                              |
+| `/productos`    | Público       | Catálogo con búsqueda y paginación.  |
+| `/producto/:id` | Público       | Detalle de un producto.              |
+| `/carrito`      | Público       | Carrito de compras.                  |
+| `/contacto`     | Público       | Página de contacto.                  |
+| `/login`        | Público       | Inicio de sesión.                    |
+| `/register`     | Público       | Registro de usuario.                 |
+| `/perfil`       | Con sesión    | Datos del usuario.                   |
+| `/admin`        | Administrador | CRUD de productos.                   |
+| `*`             | Público       | Página no encontrada.                |
 
-| Ruta              | Componente            | Descripción                          |
-|-------------------|-----------------------|--------------------------------------|
-| `/`               | `Home`                | Pantalla de bienvenida.              |
-| `/productos`      | `Productos`           | Catálogo completo de productos.      |
-| `/producto/:id`   | `ProductoDetalle`     | Detalle de un único producto.        |
-| `/carrito`        | `Carrito`             | Carrito de compras.                  |
-| `/contacto`       | `Contacto`            | Página de contacto (GitHub, etc.).   |
-| `*`               | `NotFound`            | Cualquier ruta inexistente (404).    |
+## Usuario de prueba
 
-La navegación usa `<Link>` / `<NavLink>`, por lo que **no hay recargas de página** al moverse entre vistas.
+Cualquier email con una contraseña de al menos 6 caracteres sirve para
+registrarse como usuario común desde `/register`. Para probar el panel de
+administración hay que convertir ese usuario en administrador siguiendo los
+pasos de la sección de roles.
 
----
+Ya hay un usuario administrador configurado para probar el panel:
 
-## Cómo se cumplen los requerimientos
+- Email: admin@admin.com
+- Contraseña: Adminadmin123
 
-### Requerimiento #1 — Estructura y Layout
-- Estructura de carpetas organizada (`components/`, `pages/`, `context/`).
-- `Layout.jsx` compone `Header.jsx` (que contiene la `nav` dentro de `NavBar.jsx`) y `Footer.jsx`, con apariencia consistente en toda la app.
-- El `Footer.jsx` incluye **información de la empresa** (dirección, teléfono y GitHub) y las **tarjetas de 3 integrantes** del equipo (nombre, rol y foto), más una línea de copyright con el año 2026.
+## Deploy
 
-### Requerimiento #2 — Catálogo de productos con datos de una API
-- `ItemListContainer.jsx` carga la información desde el archivo local `public/productos.json` usando **`useEffect` + `fetch`**, con estados de **carga** y **error**.
-- Cada producto se renderiza con el componente reutilizable `Item.jsx`, que **recibe los datos por props**.
-- Cada producto muestra su **foto real** (en `public/img/`) mediante `ProductImage.jsx`, que cae a un ícono SVG (`ProductIcon.jsx`) si la imagen no carga.
-
-### Requerimiento #3 — Sistema de ruteo
-- La navegación es gestionada por **`react-router-dom`**.
-- Existen las rutas: `/` (la tienda), `/productos`, `/producto/:id` y `/carrito`.
-- El `NavBar` utiliza `<Link>` / `<NavLink>` para una **navegación fluida sin recargas**.
-
-### Requerimiento #4 — Funcionalidad del carrito con Context API
-- `CartContext.jsx` gestiona el **estado global** del carrito.
-- Desde la vista de detalle, el usuario agrega productos llamando a **`addToCart`** del contexto.
-- El `NavBar` muestra el `CartWidget` (ícono de carrito con **indicador numérico**) cuyo valor sale del `CartContext` y se **actualiza en tiempo real**.
-- La ruta `/carrito` muestra el detalle de los productos agregados, **consumiendo la información directamente del `CartContext`**.
-- El carrito se **persiste en `localStorage`**, por lo que la sesión se mantiene aunque el usuario cierre la pestaña o el navegador y vuelva a entrar.
-
----
-
-## Detalle de la implementación
-
-### Persistencia de la sesión (`localStorage`)
-El carrito se guarda en `localStorage` bajo la clave `tecnovirtual.cart`, de modo que la información de la sesión **se mantiene entre visitas** (al cerrar y reabrir el navegador o recargar la página). En [`src/context/CartContext.jsx`](src/context/CartContext.jsx):
-
-- **Inicialización perezosa:** `useState(leerCarritoGuardado)` lee el carrito guardado al montar el `CartProvider`. Si no hay nada (o el dato está corrupto), arranca con un array vacío.
-- **Guardado automático:** un `useEffect` que depende de `cart` serializa el carrito a JSON y lo escribe en `localStorage` cada vez que cambia.
-- **Tolerancia a fallos:** la lectura y la escritura están envueltas en `try/catch`, así que si `localStorage` no está disponible (modo privado, cuota llena, etc.) la app sigue funcionando solo en memoria.
-
-### Estado global del carrito
-El `CartProvider` envuelve a `<App/>` en [`src/main.jsx`](src/main.jsx), por lo que el carrito es accesible desde cualquier componente. El contexto expone:
-
-| Valor / función      | Descripción                                                       |
-|----------------------|-------------------------------------------------------------------|
-| `cart`               | Array de productos en el carrito (`{ ...producto, cantidad }`).   |
-| `addToCart(p, cant)` | Agrega un producto o suma cantidad si ya existe.                  |
-| `removeFromCart(id)` | Elimina un producto del carrito.                                  |
-| `clearCart()`        | Vacía el carrito completo.                                        |
-| `isInCart(id)`       | Indica si un producto ya está en el carrito.                      |
-| `totalQuantity`      | Cantidad total de unidades (lo que muestra el `CartWidget`).      |
-| `totalPrice`         | Precio total del carrito.                                         |
-
-Para consumir el contexto se usa el hook `useCart()`, que valida que el componente esté dentro del `CartProvider`.
-
-### Carga de datos
-Tanto el listado (`ItemListContainer`) como el detalle (`ItemDetailContainer`) hacen `fetch('/productos.json')` dentro de un `useEffect`. El detalle filtra por el `:id` de la URL (`useParams`) y maneja el caso de producto no encontrado.
-
-### Estilos y responsive
-`src/index.css` define un tema oscuro mediante variables CSS y una grilla responsive. La `--max-width` del contenedor crece por breakpoints (1280 → 1480 → 1760 → 2200 → 2800 px) para que en pantallas grandes y 4K el contenido no quede angosto en el centro; como la grilla usa `auto-fill`, aparecen más columnas a medida que hay más ancho disponible.
-
----
-
-## Datos de productos
-
-El catálogo se alimenta de [`public/productos.json`](public/productos.json). Cada producto tiene la forma:
-
-```json
-{
-  "id": 1,
-  "nombre": "Notebook Pro 14\"",
-  "categoria": "Computación",
-  "precio": 1299990,
-  "stock": 12,
-  "descripcion": "Notebook ultraliviana con pantalla de 14 pulgadas...",
-  "icono": "notebook",
-  "imagen": "/img/notebook.jpg"
-}
-```
-
-> - `imagen`: ruta a la foto real del producto, servida localmente desde `public/img/` (no depende de servicios externos en runtime).
-> - `icono`: tipo usado como **fallback** SVG por `ProductIcon.jsx` si la imagen no carga (valores: `notebook`, `auriculares`, `smartphone`, `teclado`, `monitor`, `mouse`, `tablet`, `parlante`).
+El proyecto está preparado para Vercel o cualquier hosting estático. Hay que
+cargar las mismas variables `VITE_FIREBASE_*` en el panel del hosting, usar
+`npm run build` como comando de build y `dist` como carpeta de salida. El
+archivo `vercel.json` incluye la redirección necesaria para que el ruteo del
+lado del cliente funcione al recargar cualquier ruta.

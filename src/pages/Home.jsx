@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Seo from '../components/Seo.jsx'
 
 const beneficios = [
   {
@@ -18,6 +19,11 @@ const beneficios = [
 function Home() {
   return (
     <>
+      <Seo
+        title="Inicio"
+        description="TecnoVirtual: notebooks, smartphones, audio y accesorios con envío a todo el país y garantía oficial."
+      />
+
       <section className="hero">
         <div className="container">
           <h1 className="hero-title">Bienvenido a TecnoVirtual</h1>

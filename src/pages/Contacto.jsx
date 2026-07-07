@@ -1,6 +1,12 @@
+import Seo from '../components/Seo.jsx'
+
 function Contacto() {
   return (
     <section className="container contacto">
+      <Seo
+        title="Contacto"
+        description="Contactá al equipo de TecnoVirtual por consultas sobre productos o propuestas de trabajo."
+      />
       <h1 className="page-title">Contacto</h1>
       <p className="contacto-intro">
         ¿Tenés una consulta sobre un producto o querés trabajar con nosotros?
